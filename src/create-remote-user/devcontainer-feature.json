@@ -1,0 +1,29 @@
+{
+    "name": "Create Remote User",
+    "id": "create-remote-user",
+    "version": "0.0.2",
+    "description": "A to assert the configured remote user exists in the container",
+    "licenseURL": "https://github.com/haohaolee/devcontainers-features/blob/main/LICENSE",
+    "options": {
+      "create": {
+        "description": "Create the user if it doesn't exist",
+        "type": "boolean",
+        "default": true
+      },
+      "addToSudo": {
+        "description": "Add the user to sudo group and configure sudo access",
+        "type": "boolean",
+        "default": true
+      },
+      "installSudo": {
+        "description": "Install sudo if it is not yet installed",
+        "type": "boolean",
+        "default": true
+      },
+      "runSudoWithoutPassword": {
+        "description": "When addToSudo is true, allow the user to run sudo without password",
+        "type": "boolean",
+        "default": false
+      }
+    }
+  }
