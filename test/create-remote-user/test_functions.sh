@@ -37,18 +37,29 @@ assert_password_is_set() {
   fi
 }
 
-# Check if user can run sudo without password
+# Test sudo without password - requires prior authentication to clear cache
 assert_passwordless_sudo() {
   local username="$1"
+  local password="$2"
   
-  # Try to run sudo without password (using timeout to avoid hanging)
-  if ! timeout 5 sudo -n true 2>/dev/null; then
-    echo "User $username cannot run sudo without password"
+  # First verify user has sudo privileges using password
+  if ! echo "$password" | timeout 5 sudo -S -l >/dev/null 2>&1; then
+    echo "User $username does not have sudo privileges"
     exit 1
   fi
+  
+  # Clear sudo cache to test fresh authentication
+  sudo -k 2>/dev/null || true
+  
+  # Test if user can run sudo without password
+  if ! timeout 5 sudo -n true 2>/dev/null; then
+    echo "User $username has sudo privileges but requires password (NOPASSWD not configured)"
+    exit 1
+  fi
+  
+  echo "User $username can run sudo without password (NOPASSWD configured)"
 }
 
-# Check if sudoers file exists for the user
 assert_sudoers_file_exists() {
   local username="$1"
   local sudoers_file="/etc/sudoers.d/${username}-sudo"
@@ -57,9 +68,14 @@ assert_sudoers_file_exists() {
     echo "Sudoers file $sudoers_file does not exist"
     exit 1
   fi
+  
+  local perms=$(stat -c "%a" "$sudoers_file" 2>/dev/null)
+  if [ "$perms" != "440" ]; then
+    echo "Sudoers file $sudoers_file has incorrect permissions: $perms (expected: 440)"
+    exit 1
+  fi
 }
 
-# Check if sudoers file does not exist for the user
 assert_sudoers_file_not_exists() {
   local username="$1"
   local sudoers_file="/etc/sudoers.d/${username}-sudo"
@@ -70,35 +86,25 @@ assert_sudoers_file_not_exists() {
   fi
 }
 
-# Check if sudoers file contains NOPASSWD
-assert_sudoers_file_has_nopasswd() {
+# Test sudo requires password - uses known password to verify access, then tests NOPASSWD
+assert_sudo_requires_password() {
   local username="$1"
-  local sudoers_file="/etc/sudoers.d/${username}-sudo"
+  local password="$2"
   
-  if ! grep -q "NOPASSWD" "$sudoers_file"; then
-    echo "Sudoers file $sudoers_file does not contain NOPASSWD"
+  # First verify user has sudo privileges using password
+  if ! echo "$password" | timeout 5 sudo -S -l >/dev/null 2>&1; then
+    echo "User $username does not have sudo privileges"
     exit 1
   fi
-}
-
-# Check if sudoers file does not contain NOPASSWD
-assert_sudoers_file_no_nopasswd() {
-  local username="$1"
-  local sudoers_file="/etc/sudoers.d/${username}-sudo"
   
-  if grep -q "NOPASSWD" "$sudoers_file"; then
-    echo "Sudoers file $sudoers_file should not contain NOPASSWD"
-    exit 1
-  fi
-}
-
-# Check if user requires password for sudo
-assert_password_required_sudo() {
-  local username="$1"
+  # Clear sudo cache to test fresh authentication
+  sudo -k 2>/dev/null || true
   
-  # Try to run sudo without password - should fail
+  # Verify NOPASSWD is NOT configured (sudo -n should fail)
   if timeout 5 sudo -n true 2>/dev/null; then
-    echo "User $username can run sudo without password but shouldn't"
+    echo "User $username can run sudo without password (NOPASSWD should not be configured)"
     exit 1
   fi
+  
+  echo "User $username has sudo privileges and requires password (NOPASSWD not configured)"
 }
