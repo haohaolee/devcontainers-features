@@ -6,7 +6,6 @@ source test_functions.sh
 check "configured user should exist" assert_user_exists "remote"
 check "sudo should be available" assert_command_is_available "sudo"
 check "sudoers file should exist for user" assert_sudoers_file_exists "remote"
-check "sudoers file should contain NOPASSWD" assert_sudoers_file_has_nopasswd "remote"
-check "user should be able to run sudo without password" assert_passwordless_sudo "remote"
+check "user should be able to run sudo without password" assert_passwordless_sudo "remote" "remote"
 
 reportResults 

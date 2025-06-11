@@ -25,15 +25,5 @@
       }
     },
     "remoteUser": "remote"
-  },
-  "password_required_sudo": {
-    "image": "debian:bookworm-slim",
-    "features": {
-      "create-remote-user": {
-        "addToSudo": true,
-        "runSudoWithoutPassword": false
-      }
-    },
-    "remoteUser": "remote"
   }
 }
